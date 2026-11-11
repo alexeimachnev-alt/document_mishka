@@ -8,7 +8,7 @@ from reportlab.lib.colors import black
 from pypdf import PdfReader, PdfWriter
 
 # ========================================================
-# 1. НАСТРОЙКИ СЕРТИФИКАТА 
+# 1. НАСТРОЙКИ СЕРТИФИКАТА
 # ========================================================
 CERT_TEMPLATE = "cert_template.jpg"
 FONT_FILE_SERIF = "times.ttf"
@@ -19,8 +19,10 @@ try:
     pdfmetrics.registerFont(TTFont("Times", FONT_FILE_SERIF))
     pdfmetrics.registerFont(TTFont("Arial", FONT_FILE_SANS))
     pdfmetrics.registerFont(TTFont("Arial-Bold", FONT_FILE_BOLD))
+    pdfmetrics.registerFont(TTFont("Calibri", FONT_FILE_SANS)) # fallback for calibri
+    pdfmetrics.registerFont(TTFont("Calibri-Bold", FONT_FILE_BOLD))
 except Exception as e:
-    print(f"Ошибка загрузки шрифтов для PDF: {e}")
+    print(f"Ошибка загрузки шрифтов: {e}")
 
 CERT_FIELDS = {
     "number":  (512, 140, "times.ttf", 25, (142, 160, 182), "mm"),
@@ -40,17 +42,13 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
 
     clean_num = cert_num.strip() if cert_num.strip().startswith("№") else f"№{cert_num.strip()}"
     clean_inn = inn.strip() if inn.strip().upper().startswith("ИНН") else f"ИНН:{inn.strip()}"
+    
+    data_map = {"number": clean_num, "company": company_name.strip(), "inn": clean_inn, "date": valid_until.strip()}
 
-    data = {"number": clean_num, "company": company_name.strip(), "inn": clean_inn, "date": valid_until.strip()}
-
-    for key, (fx, fy, font_name, font_size, fcolor, anchor) in CERT_FIELDS.items():
-        val = data.get(key, "")
-        if not val: continue
-        try:
-            font = ImageFont.truetype(font_name, size=int(font_size * sy))
-        except:
-            font = ImageFont.load_default()
-        draw.text((fx * sx, fy * sy), val, font=font, fill=fcolor, anchor=anchor)
+    for key, val in data_map.items():
+        fx, fy, fname, fsize, fcolor, fanchor = CERT_FIELDS[key]
+        font = ImageFont.truetype(fname, size=int(fsize * sy))
+        draw.text((fx * sx, fy * sy), val, font=font, fill=fcolor, anchor=fanchor)
 
     pdf_buffer = io.BytesIO()
     image.save(pdf_buffer, format="PDF", resolution=150.0)
@@ -59,22 +57,16 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
 
 
 # ========================================================
-# 2. НАСТРОЙКИ ДОВЕРЕННОСТИ (PDF)
+# 2. НАСТРОЙКИ ДОВЕРЕННОСТИ
 # ========================================================
-# ВАЖНО: Используй скачанный dover_template.pdf (он полностью зачищен программно)
 DOVER_TEMPLATE = "dover_template.pdf"
-
-# Идеальные координаты, вытащенные прямо из исходного PDF
 DOVER_FIELDS = {
-    # --- КОРЕШОК ---
     "k_number":       (62, 714, "Arial", 8.04, "left"),
     "k_date_issue":   (110, 714, "Arial", 8.04, "left"),
     "k_date_valid":   (179, 714, "Arial", 8.04, "left"),
     "k_person":       (261, 714, "Arial", 8.04, "left"),
     "k_supplier":     (67, 664, "Arial", 8.04, "left"),
-    "k_invoice":      (225, 664, "Arial", 8.04, "left"),
     
-    # --- ОСНОВНАЯ ЧАСТЬ ---
     "number":          (254, 562, "Arial-Bold", 9.0, "left"),
     "date_issue":      (170, 545, "Arial", 8.04, "left"),
     "date_valid":      (170, 535, "Arial", 8.04, "left"),
@@ -90,13 +82,10 @@ DOVER_FIELDS = {
 
 DOVER_TABLE = {
     "rows_y": [279, 269, 259],
-    "font": "Arial", 
-    "size": 6.0,
+    "font": "Arial", "size": 6.0,
     "cols": {
-        "num":  (51,  "left"),
-        "name": (128, "left"),
-        "unit": (349, "left"),
-        "qty":  (443, "left"),
+        "num":  (51,  "left"), "name": (128, "left"),
+        "unit": (349, "left"), "qty":  (443, "left"),
     }
 }
 
@@ -107,32 +96,23 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
     reader = PdfReader(DOVER_TEMPLATE)
     page_w = float(reader.pages[0].mediabox.width)
     page_h = float(reader.pages[0].mediabox.height)
-    sx, sy = page_w / 612.0, page_h / 792.0 # Исходный размер документа (Letter)
+    sx, sy = page_w / 612.0, page_h / 792.0 
 
     packet = io.BytesIO()
     c = canvas.Canvas(packet, pagesize=(page_w, page_h))
     c.setFillColor(black)
 
-    # Заполняем поля (без всяких белых масок)
     for key, (fx, fy, font_name, font_size, align) in DOVER_FIELDS.items():
         val = str(data.get(key, "")).strip()
         if val:
-            try:
-                c.setFont(font_name, font_size * sy)
-            except:
-                pass
-            if align == "center":
-                c.drawCentredString(fx * sx, fy * sy, val)
-            elif align == "right":
-                c.drawRightString(fx * sx, fy * sy, val)
-            else:
-                c.drawString(fx * sx, fy * sy, val)
+            try: c.setFont(font_name, font_size * sy)
+            except: pass
+            if align == "center": c.drawCentredString(fx * sx, fy * sy, val)
+            elif align == "right": c.drawRightString(fx * sx, fy * sy, val)
+            else: c.drawString(fx * sx, fy * sy, val)
 
-    # Заполняем таблицу ТМЦ
-    try:
-        c.setFont(DOVER_TABLE["font"], DOVER_TABLE["size"] * sy)
-    except:
-        pass
+    try: c.setFont(DOVER_TABLE["font"], DOVER_TABLE["size"] * sy)
+    except: pass
         
     for idx, item in enumerate(items[:3]):
         ry = DOVER_TABLE["rows_y"][idx] * sy
@@ -143,8 +123,6 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
 
     c.save()
     packet.seek(0)
-
-    # Накладываем текст
     overlay_reader = PdfReader(packet)
     writer = PdfWriter(clone_from=DOVER_TEMPLATE)
     writer.pages[0].merge_page(overlay_reader.pages[0])
@@ -152,5 +130,98 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
     output_stream = io.BytesIO()
     writer.write(output_stream)
     output_stream.seek(0)
-    
+    return output_stream
+
+
+# ========================================================
+# 3. НАСТРОЙКИ ДОГОВОРА
+# ========================================================
+CONTRACT_TEMPLATE = "contract_template.pdf"
+
+CONTRACT_FIELDS = {
+    0: [
+        (216.11, 708.81, "number", "Arial-Bold", 13.9),
+        (466.15, 687.39, "date_start", "Arial-Bold", 10.56),
+        (57.60, 633.15, "company_header", "Arial", 10.56),
+        (57.60, 618.51, "fio_gen_dir", "Arial", 10.56),
+    ],
+    4: [
+        (57.60, 626.67, "date_end", "Arial", 10.56),
+    ],
+    5: [
+        (311.03, 672.99, "company", "Arial-Bold", 10.56),
+        (311.03, 648.27, "address", "Arial", 10.56),
+        (311.03, 608.91, "inn_kpp", "Arial", 10.56),
+        (311.03, 584.19, "bank_account", "Arial", 10.56),
+        (311.03, 559.47, "bank_name", "Arial", 10.56),
+        (311.03, 534.75, "corr_account", "Arial", 10.56),
+        (311.03, 510.03, "bik", "Arial", 10.56),
+        (311.03, 485.07, "phone", "Arial", 10.56),
+        (311.03, 391.47, "fio_short", "Arial", 10.56),
+    ],
+    6: [
+        (187.61, 701.31, "c_number", "Arial-Bold", 10.56),
+    ],
+    7: [
+        (57.60, 287.79, "fio_short", "Arial", 10.56),
+    ],
+    8: [
+        (187.61, 701.31, "c_number", "Arial-Bold", 10.56),
+        (57.60, 368.67, "fio_short", "Arial", 10.56),
+    ],
+    9: [
+        (187.61, 701.31, "c_number", "Arial-Bold", 10.56),
+    ],
+    10: [
+        (57.60, 300.99, "fio_short", "Arial", 10.56),
+    ]
+}
+
+def generate_contract(data: dict) -> io.BytesIO:
+    if not os.path.exists(CONTRACT_TEMPLATE):
+        raise FileNotFoundError(f"Файл {CONTRACT_TEMPLATE} не найден.")
+
+    reader = PdfReader(CONTRACT_TEMPLATE)
+    writer = PdfWriter(clone_from=CONTRACT_TEMPLATE)
+
+    for page_idx, fields in CONTRACT_FIELDS.items():
+        if page_idx >= len(reader.pages):
+            continue
+            
+        page = reader.pages[page_idx]
+        page_w = float(page.mediabox.width)
+        page_h = float(page.mediabox.height)
+        
+        packet = io.BytesIO()
+        c = canvas.Canvas(packet, pagesize=(page_w, page_h))
+        c.setFillColor(black)
+
+        for fx, fy, key, font_name, font_size in fields:
+            val = data.get(key, "")
+            if not val:
+                continue
+                
+            try:
+                c.setFont(font_name, font_size)
+            except:
+                pass
+                
+            if key == "address" and "\n" in val:
+                parts = val.split("\n")
+                c.drawString(fx, fy, parts[0])
+                c.drawString(fx, fy - (font_size * 1.2), parts[1])
+            elif key == "fio_short" and page_idx in [7, 8, 10]:
+                c.drawString(fx + 300, fy, val)
+            else:
+                c.drawString(fx, fy, val)
+
+        c.save()
+        packet.seek(0)
+        
+        overlay_reader = PdfReader(packet)
+        writer.pages[page_idx].merge_page(overlay_reader.pages[0])
+
+    output_stream = io.BytesIO()
+    writer.write(output_stream)
+    output_stream.seek(0)
     return output_stream
