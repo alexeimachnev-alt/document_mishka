@@ -7,6 +7,9 @@ from aiogram import Bot, Dispatcher
 from aiogram.filters import CommandStart
 from aiogram.types import Message, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types.web_app_info import WebAppInfo
+import urllib.request
+import threading
+import time
 
 from generator import generate_certificate, generate_doverennost, generate_contract
 
@@ -14,20 +17,31 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 PORT = int(os.getenv("PORT", 8080))
 WEBAPP_URL = os.getenv("WEBAPP_URL", "https://mishka-doc-bot.onrender.com/app")
+PING_URL = os.getenv("PING_URL", "https://mishka-doc-bot.onrender.com")
 
 bot = Bot(token=BOT_TOKEN or "dummy_token")
 dp = Dispatcher()
+
+# --- Автопингер (чтобы Render не засыпал) ---
+def pinger():
+    while True:
+        time.sleep(600)  # Пинг каждые 10 минут
+        try:
+            url = PING_URL if PING_URL.startswith('http') else 'https://' + PING_URL
+            urllib.request.urlopen(url)
+            print(f"Pinged {url} successfully.")
+        except Exception as e:
+            print(f"Ping error: {e}")
 
 # --- Обработчик команды /start ---
 @dp.message(CommandStart())
 async def start_handler(message: Message):
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📱 Открыть приложение (Mini App)", web_app=WebAppInfo(url=WEBAPP_URL))]
+        [InlineKeyboardButton(text="✨ МАГИЯ ДОКУМЕНТОВ ✨", web_app=WebAppInfo(url=WEBAPP_URL))]
     ])
     await message.answer(
         "👋 **Генератор документов МИШКА**\n\n"
-        "Теперь заполнять данные стало намного удобнее!\n"
-        "Нажми на кнопку ниже, чтобы открыть мини-приложение, выбери нужный документ и заполни форму в одном окне.",
+        "Нажми на кнопку «✨ МАГИЯ ДОКУМЕНТОВ ✨», чтобы открыть приложение и сгенерировать Сертификат, Доверенность или Договор в 1 клик!",
         reply_markup=kb
     )
 
@@ -51,7 +65,7 @@ async def api_generate(request):
             return web.json_response({"error": "No chat_id provided"}, status=400)
 
         # Отправляем сообщение о начале генерации
-        await bot.send_message(chat_id, "⏳ Генерирую документ, подождите...")
+        await bot.send_message(chat_id, "⏳ Творим магию... Документ скоро будет готов!")
 
         # --- СЕРТИФИКАТ ---
         if doc_type == "cert":
@@ -64,7 +78,7 @@ async def api_generate(request):
             await bot.send_document(
                 chat_id,
                 BufferedInputFile(pdf_buf.getvalue(), filename=f"Сертификат_{form.get('number', '0').replace('/', '_')}.pdf"),
-                caption="✅ Сертификат готов!"
+                caption="✅ Сертификат дилера успешно сгенерирован!"
             )
 
         # --- ДОВЕРЕННОСТЬ ---
@@ -96,7 +110,7 @@ async def api_generate(request):
             await bot.send_document(
                 chat_id,
                 BufferedInputFile(pdf_buf.getvalue(), filename=f"Доверенность_№{form.get('number', '0')}.pdf"),
-                caption="✅ Доверенность готова!"
+                caption="✅ Доверенность М-2 успешно сгенерирована!"
             )
 
         # --- ДОГОВОР ---
@@ -142,7 +156,7 @@ async def api_generate(request):
             await bot.send_document(
                 chat_id,
                 BufferedInputFile(pdf_buf.getvalue(), filename=f"Договор_{comp}.pdf"),
-                caption="✅ Договор готов!"
+                caption="✅ Дилерский договор (11 стр.) успешно сгенерирован!"
             )
 
         return web.json_response({"success": True})
@@ -164,7 +178,10 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", PORT)
     await site.start()
     
-    print("Бот и WebApp запущены!")
+    # Запускаем автопингер в отдельном потоке
+    threading.Thread(target=pinger, daemon=True).start()
+    
+    print("Бот, WebApp и автопингер запущены!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
