@@ -1,31 +1,21 @@
 import io
 import os
+from PIL import Image, ImageDraw, ImageFont
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import white, black
 from pypdf import PdfReader, PdfWriter
-from PIL import Image, ImageDraw, ImageFont
 
 # ========================================================
-# 1. НАСТРОЙКИ СЕРТИФИКАТА (PILLOW + PYPDF)
+# 1. НАСТРОЙКИ СЕРТИФИКАТА (PILLOW -> PDF)
 # ========================================================
 CERT_TEMPLATE = "cert_template.jpg"
 FONT_FILE_SERIF = "times.ttf"
 FONT_FILE_SANS = "arial.ttf"
 FONT_FILE_BOLD = "arialbd.ttf"
 
-try:
-    pdfmetrics.registerFont(TTFont("Times", FONT_FILE_SERIF))
-    pdfmetrics.registerFont(TTFont("Arial", FONT_FILE_SANS))
-    pdfmetrics.registerFont(TTFont("Arial-Bold", FONT_FILE_BOLD))
-except Exception as e:
-    print(f"Ошибка загрузки шрифтов для PDF: {e}")
-
 # Координаты для чистого jpg сертификата (1024x723)
-# - номер поднял выше (178 -> 150)
-# - компанию опустил ниже (260 -> 290)
-# - инн тоже немного опустил (327 -> 335) чтобы смотрелось гармонично над чертой
 CERT_FIELDS = {
     "number":  (512, 150, "times.ttf", 25, (142, 160, 182), "mm"),
     "company": (512, 290, "arial.ttf", 30, (27, 46, 75), "mm"),
@@ -75,12 +65,30 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
 
 
 # ========================================================
-# 2. НАСТРОЙКИ ДОВЕРЕННОСТИ (PDF)
+# 2. НАСТРОЙКИ ДОВЕРЕННОСТИ (PDF + Белые маски)
 # ========================================================
-DOVER_TEMPLATE = "dover_template.pdf"
+DOVER_TEMPLATE = "МИШКА Доверенность м2 с печатями и подписью заполнять в середине-4.pdf"
 
-# Текст вставляется поверх ЧИСТОГО шаблона, белые маски не нужны
-# Формат: "ключ": (X, Y, "Шрифт", Размер, "выравнивание")
+try:
+    pdfmetrics.registerFont(TTFont("Arial", FONT_FILE_SANS))
+    pdfmetrics.registerFont(TTFont("Arial-Bold", FONT_FILE_BOLD))
+except Exception as e:
+    print(f"Ошибка загрузки шрифтов для PDF: {e}")
+
+# ВОЗВРАЩЕНЫ БЕЛЫЕ МАСКИ ДЛЯ ЗАЧИСТКИ (идеально работало в версии 3)
+DOVER_MASKS = [
+    (25, 746, 52, 16), (82, 746, 65, 16), (152, 746, 68, 16), (225, 746, 210, 16),
+    (25, 688, 195, 18), (225, 688, 150, 18), (305, 590, 60, 18), (128, 563, 85, 14),
+    (218, 545, 85, 14), (138, 434, 95, 14), (242, 434, 280, 14), (120, 415, 55, 14),
+    (205, 415, 80, 14), (105, 398, 380, 14), (115, 380, 120, 14), (132, 362, 380, 14),
+    (178, 344, 340, 14), 
+    # Маски для таблицы
+    (48, 277.6, 10, 9.5), (125, 277.6, 200, 9.5), (345, 277.6, 20, 9.5), (435, 277.6, 30, 9.5),
+    (48, 267.6, 10, 9.5), (125, 267.6, 200, 9.5), (345, 267.6, 20, 9.5), (435, 267.6, 30, 9.5),
+    (48, 257.6, 10, 9.5), (125, 257.6, 200, 9.5), (345, 257.6, 20, 9.5), (435, 257.6, 30, 9.5),
+    (48, 247.6, 10, 9.5), (125, 247.6, 200, 9.5), (345, 247.6, 20, 9.5), (435, 247.6, 30, 9.5),
+]
+
 DOVER_FIELDS = {
     # --- КОРЕШОК ---
     "k_number":       (51,  750, "Arial", 9, "center"),
@@ -105,11 +113,11 @@ DOVER_FIELDS = {
 }
 
 DOVER_TABLE = {
-    "rows_y": [254, 235, 216],
-    "font": "Arial", "size": 9,
+    "rows_y": [279.0, 269.0, 259.0],
+    "font": "Arial", "size": 8.5,
     "cols": {
-        "num":  (44,  "center"), "name": (72,  "left"),
-        "unit": (399, "center"), "qty":  (498, "center"),
+        "num":  (53,  "center"), "name": (128, "left"),
+        "unit": (355, "center"), "qty":  (450, "center"),
     }
 }
 
@@ -125,6 +133,13 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
     packet = io.BytesIO()
     c = canvas.Canvas(packet, pagesize=(page_w, page_h))
 
+    # ЗАКРАШИВАЕМ СТАРЫЕ ДАННЫЕ БЕЛЫМИ ПЛАШКАМИ (Возврат к надежной логике)
+    c.setFillColor(white)
+    c.setStrokeColor(white)
+    for (mx, my, mw, mh) in DOVER_MASKS:
+        c.rect(mx * sx, my * sy, mw * sx, mh * sy, fill=1, stroke=0)
+
+    # НАКЛАДЫВАЕМ НОВЫЕ ДАННЫЕ
     c.setFillColor(black)
     for key, (fx, fy, font_name, font_size, align) in DOVER_FIELDS.items():
         val = str(data.get(key, "")).strip()

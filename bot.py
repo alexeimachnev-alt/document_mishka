@@ -95,7 +95,7 @@ async def process_cert_date(message: Message, state: FSMContext):
             caption=f"✅ Сертификат {data['number']} готов!\nГлавное меню — /start"
         )
     except Exception as e:
-        await message.answer(f"❌ Ошибка при генерации сертификата: {e}\nПроверьте, загружен ли шаблон PDF.")
+        await message.answer(f"❌ Ошибка при генерации сертификата: {e}\nПроверьте, загружен ли шаблон JPG.")
 
 # ==========================================
 # ВЕТКА: ДОВЕРЕННОСТЬ
@@ -202,7 +202,7 @@ async def process_dover_items(message: Message, state: FSMContext):
         elif len(parts) == 2:
             items.append({"name": parts[0], "unit": "Шт", "qty": parts[1]})
             
-    await message.answer("⏳ Генерирую доверенность, накладываю новые поля...")
+    await message.answer("⏳ Генерирую доверенность...")
     
     try:
         pdf_buf = generate_doverennost(data, items)
