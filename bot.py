@@ -89,14 +89,13 @@ async def process_cert_date(message: Message, state: FSMContext):
     
     await message.answer("⏳ Создаю сертификат, подождите...")
     try:
-        img_buf, pdf_buf = generate_certificate(data["number"], data["company"], data["inn"], valid_until)
-        await message.answer_photo(
-            BufferedInputFile(img_buf.getvalue(), filename="certificate.jpg"), 
+        pdf_buf = generate_certificate(data["number"], data["company"], data["inn"], valid_until)
+        await message.answer_document(
+            BufferedInputFile(pdf_buf.getvalue(), filename=f"Сертификат_{data['number'].replace('/', '_')}.pdf"),
             caption=f"✅ Сертификат {data['number']} готов!\nГлавное меню — /start"
         )
-        await message.answer_document(BufferedInputFile(pdf_buf.getvalue(), filename=f"Сертификат_{data['number'].replace('/', '_')}.pdf"))
     except Exception as e:
-        await message.answer(f"❌ Ошибка: {e}")
+        await message.answer(f"❌ Ошибка при генерации сертификата: {e}\nПроверьте, загружен ли шаблон PDF.")
 
 # ==========================================
 # ВЕТКА: ДОВЕРЕННОСТЬ
@@ -129,7 +128,7 @@ async def process_dover_fio(message: Message, state: FSMContext):
     fio = message.text.strip()
     await state.update_data(
         person_fio=fio,
-        k_person=fio  # В корешок пишем только ФИО, чтобы влезло
+        k_person=fio
     )
     await message.answer("Шаг 4: Введите **Серию** паспорта (только цифры):")
     await state.set_state(DoverForm.passport_series)
