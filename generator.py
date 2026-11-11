@@ -14,15 +14,17 @@ CERT_TEMPLATE = "cert_template.jpg"
 FONT_FILE_SERIF = "times.ttf"
 FONT_FILE_SANS = "arial.ttf"
 FONT_FILE_BOLD = "arialbd.ttf"
+FONT_FILE_CALIBRI = "calibri.ttf"
+FONT_FILE_CALIBRI_BOLD = "calibrib.ttf"
 
 try:
     pdfmetrics.registerFont(TTFont("Times", FONT_FILE_SERIF))
     pdfmetrics.registerFont(TTFont("Arial", FONT_FILE_SANS))
     pdfmetrics.registerFont(TTFont("Arial-Bold", FONT_FILE_BOLD))
-    pdfmetrics.registerFont(TTFont("Calibri", FONT_FILE_SANS)) # fallback for calibri
-    pdfmetrics.registerFont(TTFont("Calibri-Bold", FONT_FILE_BOLD))
+    pdfmetrics.registerFont(TTFont("Calibri", FONT_FILE_CALIBRI))
+    pdfmetrics.registerFont(TTFont("Calibri-Bold", FONT_FILE_CALIBRI_BOLD))
 except Exception as e:
-    print(f"Ошибка загрузки шрифтов: {e}")
+    print(f"Внимание: Ошибка загрузки некоторых шрифтов (убедитесь, что arial, times, calibri.ttf лежат в папке): {e}")
 
 CERT_FIELDS = {
     "number":  (512, 140, "times.ttf", 25, (142, 160, 182), "mm"),
@@ -33,8 +35,8 @@ CERT_FIELDS = {
 
 def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until: str) -> io.BytesIO:
     if not os.path.exists(CERT_TEMPLATE):
-        raise FileNotFoundError(f"Файл {CERT_TEMPLATE} не найден.")
-
+         raise FileNotFoundError(f"Файл {CERT_TEMPLATE} не найден.")
+         
     image = Image.open(CERT_TEMPLATE).convert("RGB")
     draw = ImageDraw.Draw(image)
     width, height = image.size
@@ -47,7 +49,10 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
 
     for key, val in data_map.items():
         fx, fy, fname, fsize, fcolor, fanchor = CERT_FIELDS[key]
-        font = ImageFont.truetype(fname, size=int(fsize * sy))
+        try:
+            font = ImageFont.truetype(fname, size=int(fsize * sy))
+        except:
+            font = ImageFont.load_default()
         draw.text((fx * sx, fy * sy), val, font=font, fill=fcolor, anchor=fanchor)
 
     pdf_buffer = io.BytesIO()
@@ -134,46 +139,47 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
 
 
 # ========================================================
-# 3. НАСТРОЙКИ ДОГОВОРА
+# 3. НАСТРОЙКИ ДОГОВОРА (PDF)
 # ========================================================
 CONTRACT_TEMPLATE = "contract_template.pdf"
 
+# Координаты для Договора (шрифт изменен на Calibri 10.5)
 CONTRACT_FIELDS = {
     0: [
-        (216.11, 708.81, "number", "Arial-Bold", 13.9),
-        (466.15, 687.39, "date_start", "Arial-Bold", 10.56),
-        (57.60, 633.15, "company_header", "Arial", 10.56),
-        (57.60, 618.51, "fio_gen_dir", "Arial", 10.56),
+        (216.11, 708.81, "number", "Calibri-Bold", 13.9),
+        (466.15, 687.39, "date_start", "Calibri-Bold", 10.5),
+        (57.60, 633.15, "company_header", "Calibri", 10.5),
+        (57.60, 618.51, "fio_gen_dir", "Calibri", 10.5),
     ],
     4: [
-        (57.60, 626.67, "date_end", "Arial", 10.56),
+        (57.60, 626.67, "date_end", "Calibri", 10.5),
     ],
     5: [
-        (311.03, 672.99, "company", "Arial-Bold", 10.56),
-        (311.03, 648.27, "address", "Arial", 10.56),
-        (311.03, 608.91, "inn_kpp", "Arial", 10.56),
-        (311.03, 584.19, "bank_account", "Arial", 10.56),
-        (311.03, 559.47, "bank_name", "Arial", 10.56),
-        (311.03, 534.75, "corr_account", "Arial", 10.56),
-        (311.03, 510.03, "bik", "Arial", 10.56),
-        (311.03, 485.07, "phone", "Arial", 10.56),
-        (311.03, 391.47, "fio_short", "Arial", 10.56),
+        (311.03, 672.99, "company", "Calibri-Bold", 10.5),
+        (311.03, 648.27, "address", "Calibri", 10.5),
+        (311.03, 608.91, "inn_kpp", "Calibri", 10.5),
+        (311.03, 584.19, "bank_account", "Calibri", 10.5),
+        (311.03, 559.47, "bank_name", "Calibri", 10.5),
+        (311.03, 534.75, "corr_account", "Calibri", 10.5),
+        (311.03, 510.03, "bik", "Calibri", 10.5),
+        (311.03, 485.07, "phone", "Calibri", 10.5),
+        (311.03, 391.47, "fio_short", "Calibri", 10.5),
     ],
     6: [
-        (187.61, 701.31, "c_number", "Arial-Bold", 10.56),
+        (187.61, 701.31, "c_number", "Calibri-Bold", 10.5),
     ],
     7: [
-        (57.60, 287.79, "fio_short", "Arial", 10.56),
+        (57.60, 287.79, "fio_short", "Calibri", 10.5),
     ],
     8: [
-        (187.61, 701.31, "c_number", "Arial-Bold", 10.56),
-        (57.60, 368.67, "fio_short", "Arial", 10.56),
+        (187.61, 701.31, "c_number", "Calibri-Bold", 10.5),
+        (57.60, 368.67, "fio_short", "Calibri", 10.5),
     ],
     9: [
-        (187.61, 701.31, "c_number", "Arial-Bold", 10.56),
+        (187.61, 701.31, "c_number", "Calibri-Bold", 10.5),
     ],
     10: [
-        (57.60, 300.99, "fio_short", "Arial", 10.56),
+        (57.60, 300.99, "fio_short", "Calibri", 10.5),
     ]
 }
 
@@ -206,6 +212,7 @@ def generate_contract(data: dict) -> io.BytesIO:
             except:
                 pass
                 
+            # Обработка многострочного адреса
             if key == "address" and "\n" in val:
                 parts = val.split("\n")
                 c.drawString(fx, fy, parts[0])

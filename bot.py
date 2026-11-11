@@ -207,7 +207,7 @@ async def process_dover_items(message: Message, state: FSMContext):
         file_name = f"Доверенность_№{data.get('number', '0')}.pdf"
         await message.answer_document(BufferedInputFile(pdf_buf.getvalue(), filename=file_name), caption="✅ Доверенность готова!\nГлавное меню — /start")
     except Exception as e:
-        await message.answer(f"❌ Ошибка при генерации доверенности: {e}")
+        await message.answer(f"❌ Ошибка при генерации: {e}")
 
 # ==========================================
 # ВЕТКА: ДОГОВОР ДИЛЕРА
@@ -311,11 +311,13 @@ async def process_contract_phone(message: Message, state: FSMContext):
     
     await message.answer("⏳ Генерирую договор (11 страниц), заполняю реквизиты...")
     try:
+        from generator import generate_contract
         pdf_buf = generate_contract(data)
         file_name = f"Договор_{data.get('company', 'Дилер')}.pdf"
         await message.answer_document(BufferedInputFile(pdf_buf.getvalue(), filename=file_name), caption="✅ Договор готов!\nГлавное меню — /start")
     except Exception as e:
         await message.answer(f"❌ Ошибка при генерации договора: {e}")
+
 
 # --- Web Server для Render ---
 async def healthcheck(request):
