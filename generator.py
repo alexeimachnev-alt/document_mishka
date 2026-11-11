@@ -1,10 +1,10 @@
 import io
+import os
 from PIL import Image, ImageDraw, ImageFont
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from pypdf import PdfReader, PdfWriter
-import os
 
 # ========================================================
 # НАСТРОЙКИ СЕРТИФИКАТА (PILLOW)
@@ -86,7 +86,7 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
     draw.text((width / 2, 560), clean_inn, font=font_inn, fill=color_main, anchor="mm")
     draw.text((970, 893), valid_until.strip(), font=font_date, fill=color_main, anchor="lm")
 
-    jpg_buffer, pdf_buffer = io.BytesIO(), io.BytesIO()
+    jpg_buffer, pdf_buffer = io.BytesIO()
     image.save(jpg_buffer, format="JPEG", quality=95)
     image.save(pdf_buffer, format="PDF", resolution=150.0)
     
