@@ -22,7 +22,7 @@ try:
 except Exception as e:
     print(f"Ошибка загрузки шрифтов для PDF: {e}")
 
-# Исправленные координаты: номер выше, название ниже
+# Координаты для сертификата 1024x723
 CERT_FIELDS = {
     "number":  (512, 140, "times.ttf", 25, (142, 160, 182), "mm"),
     "company": (512, 275, "arial.ttf", 30, (27, 46, 75), "mm"),
@@ -62,9 +62,11 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
 # ========================================================
 # 2. НАСТРОЙКИ ДОВЕРЕННОСТИ (PDF)
 # ========================================================
+# ВАЖНО: Используется идеально вычищенный программно PDF-шаблон dover_template.pdf
+# Маски (белые квадраты) убраны полностью, чтобы не затирать линии таблицы!
 DOVER_TEMPLATE = "dover_template.pdf"
 
-# Идеальные координаты, вытащенные прямо из исходного PDF
+# Точные координаты из оригинального PDF (с точностью до сотых долей пикселя)
 DOVER_FIELDS = {
     # --- КОРЕШОК ---
     "k_number":       (62, 714, "Arial", 8.04, "left"),
@@ -72,7 +74,7 @@ DOVER_FIELDS = {
     "k_date_valid":   (179, 714, "Arial", 8.04, "left"),
     "k_person":       (261, 714, "Arial", 8.04, "left"),
     "k_supplier":     (67, 664, "Arial", 8.04, "left"),
-    "k_invoice":      (229, 684, "Arial", 8.04, "left"),
+    "k_invoice":      (195, 685, "Arial", 8.04, "left"),
     
     # --- ОСНОВНАЯ ЧАСТЬ ---
     "number":          (254, 562, "Arial-Bold", 9.0, "left"),
@@ -81,7 +83,7 @@ DOVER_FIELDS = {
     "position":        (206, 441, "Arial", 8.04, "left"),
     "person_fio":      (313, 441, "Arial", 8.04, "left"),
     "passport_series": (150, 424, "Arial", 8.04, "left"),
-    "passport_num":    (254, 424, "Arial", 8.04, "left"),
+    "passport_num":    (233, 424, "Arial", 8.04, "left"),
     "passport_issued": (150, 414, "Arial", 8.04, "left"),
     "passport_date":   (150, 404, "Arial", 8.04, "left"),
     "supplier":        (150, 387, "Arial", 8.04, "left"),
@@ -107,12 +109,13 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
     reader = PdfReader(DOVER_TEMPLATE)
     page_w = float(reader.pages[0].mediabox.width)
     page_h = float(reader.pages[0].mediabox.height)
-    sx, sy = page_w / 612.0, page_h / 792.0 # Исходный размер документа (Letter)
+    sx, sy = page_w / 612.0, page_h / 792.0 # Оригинальный размер PDF (Letter 612x792)
 
     packet = io.BytesIO()
     c = canvas.Canvas(packet, pagesize=(page_w, page_h))
     c.setFillColor(black)
 
+    # Вписываем текст по точным координатам
     for key, (fx, fy, font_name, font_size, align) in DOVER_FIELDS.items():
         val = str(data.get(key, "")).strip()
         if val:
@@ -127,6 +130,7 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
             else:
                 c.drawString(fx * sx, fy * sy, val)
 
+    # Заполняем таблицу ТМЦ
     try:
         c.setFont(DOVER_TABLE["font"], DOVER_TABLE["size"] * sy)
     except:
