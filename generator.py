@@ -14,6 +14,13 @@ FONT_FILE_SERIF = "times.ttf"
 FONT_FILE_SANS = "arial.ttf"
 FONT_FILE_BOLD = "arialbd.ttf"
 
+# Координаты для сертификата (Y - высота, X - ширина)
+CERT_Y_NUM = 285        # Номер сертификата
+CERT_Y_COMPANY = 360    # Название компании
+CERT_Y_INN = 425        # ИНН
+CERT_Y_DATE = 568       # Дата действия
+CERT_X_DATE = 755       # Положение даты по горизонтали (правее текста)
+
 # ========================================================
 # НАСТРОЙКИ ДОВЕРЕННОСТИ (REPORTLAB - PDF)
 # ========================================================
@@ -81,12 +88,12 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
     clean_num = cert_num.strip() if cert_num.strip().startswith("№") else f"№{cert_num.strip()}"
     clean_inn = inn.strip() if inn.strip().upper().startswith("ИНН") else f"ИНН:{inn.strip()}"
 
-    draw.text((width / 2, 242), clean_num, font=font_num, fill=color_num, anchor="mm")
-    draw.text((width / 2, 445), company_name.strip(), font=font_company, fill=color_main, anchor="mm")
-    draw.text((width / 2, 560), clean_inn, font=font_inn, fill=color_main, anchor="mm")
-    draw.text((970, 893), valid_until.strip(), font=font_date, fill=color_main, anchor="lm")
+    draw.text((width / 2, CERT_Y_NUM), clean_num, font=font_num, fill=color_num, anchor="mm")
+    draw.text((width / 2, CERT_Y_COMPANY), company_name.strip(), font=font_company, fill=color_main, anchor="mm")
+    draw.text((width / 2, CERT_Y_INN), clean_inn, font=font_inn, fill=color_main, anchor="mm")
+    draw.text((CERT_X_DATE, CERT_Y_DATE), valid_until.strip(), font=font_date, fill=color_main, anchor="lm")
 
-    jpg_buffer, pdf_buffer = io.BytesIO()
+    jpg_buffer, pdf_buffer = io.BytesIO(), io.BytesIO()
     image.save(jpg_buffer, format="JPEG", quality=95)
     image.save(pdf_buffer, format="PDF", resolution=150.0)
     
@@ -103,10 +110,12 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
     c = canvas.Canvas(packet, pagesize=(595.27, 841.89))
     c.setFont("Arial", 10)
     
+    # 1. Заполняем основные поля
     for key, coords in DOVER_COORDS.items():
         if key in data and data[key]:
             c.drawString(coords[0], coords[1], str(data[key]))
             
+    # 2. Заполняем таблицу (максимум 3 строки)
     current_y = DOVER_TABLE["start_y"]
     for i, item in enumerate(items[:3], start=1):
         c.drawString(DOVER_TABLE["cols"]["num"], current_y, str(i))
@@ -119,16 +128,11 @@ def generate_doverennost(data: dict, items: list) -> io.BytesIO:
     packet.seek(0)
     
     new_pdf = PdfReader(packet)
-    existing_pdf = PdfReader(open(DOVER_TEMPLATE, "rb"))
-    output = PdfWriter()
     
-    page1 = existing_pdf.pages[0]
-    page1.merge_page(new_pdf.pages[0])
-    output.add_page(page1)
+    # ИСПРАВЛЕНИЕ ОШИБКИ ИЗ СКРИНШОТА 2253: ИСПОЛЬЗУЕМ clone_from
+    output = PdfWriter(clone_from=DOVER_TEMPLATE)
+    output.pages[0].merge_page(new_pdf.pages[0])
     
-    if len(existing_pdf.pages) > 1:
-        output.add_page(existing_pdf.pages[1])
-        
     output_stream = io.BytesIO()
     output.write(output_stream)
     output_stream.seek(0)
