@@ -72,7 +72,7 @@ DOVER_FIELDS = {
     "k_date_valid":   (179, 714, "Arial", 8.04, "left"),
     "k_person":       (261, 714, "Arial", 8.04, "left"),
     "k_supplier":     (67, 664, "Arial", 8.04, "left"),
-    "k_invoice":      (229, 664, "Arial", 8.04, "left"),
+    "k_invoice":      (225, 664, "Arial", 8.04, "left"),
     
     # --- ОСНОВНАЯ ЧАСТЬ ---
     "number":          (254, 562, "Arial-Bold", 9.0, "left"),
