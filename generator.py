@@ -1,11 +1,11 @@
 import io
 import os
-from PIL import Image, ImageDraw, ImageFont
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import white, black
 from pypdf import PdfReader, PdfWriter
+from PIL import Image, ImageDraw, ImageFont
 
 # ========================================================
 # 1. НАСТРОЙКИ СЕРТИФИКАТА (PILLOW + PYPDF)
@@ -15,11 +15,21 @@ FONT_FILE_SERIF = "times.ttf"
 FONT_FILE_SANS = "arial.ttf"
 FONT_FILE_BOLD = "arialbd.ttf"
 
+try:
+    pdfmetrics.registerFont(TTFont("Times", FONT_FILE_SERIF))
+    pdfmetrics.registerFont(TTFont("Arial", FONT_FILE_SANS))
+    pdfmetrics.registerFont(TTFont("Arial-Bold", FONT_FILE_BOLD))
+except Exception as e:
+    print(f"Ошибка загрузки шрифтов для PDF: {e}")
+
 # Координаты для чистого jpg сертификата (1024x723)
+# - номер поднял выше (178 -> 150)
+# - компанию опустил ниже (260 -> 290)
+# - инн тоже немного опустил (327 -> 335) чтобы смотрелось гармонично над чертой
 CERT_FIELDS = {
-    "number":  (512, 178, "times.ttf", 25, (142, 160, 182), "mm"),
-    "company": (512, 260, "arial.ttf", 30, (27, 46, 75), "mm"),
-    "inn":     (512, 327, "arial.ttf", 22, (27, 46, 75), "mm"),
+    "number":  (512, 150, "times.ttf", 25, (142, 160, 182), "mm"),
+    "company": (512, 290, "arial.ttf", 30, (27, 46, 75), "mm"),
+    "inn":     (512, 335, "arial.ttf", 22, (27, 46, 75), "mm"),
     "date":    (566, 521, "arialbd.ttf", 23, (27, 46, 75), "lm"),
 }
 
@@ -44,7 +54,7 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
         "date": valid_until.strip()
     }
 
-    # Пишем текст прямо на чистый jpg
+    # Пишем текст прямо на jpg
     for key, (fx, fy, font_name, font_size, fcolor, anchor) in CERT_FIELDS.items():
         val = data.get(key, "")
         if not val:
@@ -56,7 +66,7 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
             
         draw.text((fx * sx, fy * sy), val, font=font, fill=fcolor, anchor=anchor)
 
-    # Сохраняем сразу в PDF
+    # Сохраняем сразу в PDF (для унификации выдачи бота)
     pdf_buffer = io.BytesIO()
     image.save(pdf_buffer, format="PDF", resolution=150.0)
     pdf_buffer.seek(0)
@@ -69,13 +79,7 @@ def generate_certificate(cert_num: str, company_name: str, inn: str, valid_until
 # ========================================================
 DOVER_TEMPLATE = "dover_template.pdf"
 
-try:
-    pdfmetrics.registerFont(TTFont("Arial", FONT_FILE_SANS))
-    pdfmetrics.registerFont(TTFont("Arial-Bold", FONT_FILE_BOLD))
-except Exception as e:
-    print(f"Ошибка загрузки шрифтов для PDF: {e}")
-
-# Текст вставляется поверх ЧИСТОГО шаблона, белые маски не нужны!
+# Текст вставляется поверх ЧИСТОГО шаблона, белые маски не нужны
 # Формат: "ключ": (X, Y, "Шрифт", Размер, "выравнивание")
 DOVER_FIELDS = {
     # --- КОРЕШОК ---
