@@ -18,7 +18,6 @@ PORT = int(os.getenv("PORT", 8080))
 bot = Bot(token=BOT_TOKEN or "dummy_token")
 dp = Dispatcher()
 
-# --- FSM Классы ---
 class CertForm(StatesGroup):
     number = State()
     company = State()
@@ -37,7 +36,6 @@ class DoverForm(StatesGroup):
     invoice = State()
     items = State()
 
-# --- Главное меню ---
 @dp.message(CommandStart())
 async def start_handler(message: Message, state: FSMContext):
     await state.clear()
@@ -56,11 +54,9 @@ async def process_doc_selection(callback: CallbackQuery, state: FSMContext):
     if doc_type == "cert":
         await callback.message.answer("Шаг 1: Введите **номер сертификата** (например: `2708/25`):")
         await state.set_state(CertForm.number)
-        
     elif doc_type == "dover":
         await callback.message.answer("Шаг 1: Введите **номер доверенности** (например: `15`):")
         await state.set_state(DoverForm.number)
-        
     elif doc_type == "contract":
         await callback.message.answer("Генерация договора в процессе настройки. Выберите другой документ.")
 
@@ -94,14 +90,13 @@ async def process_cert_date(message: Message, state: FSMContext):
     await message.answer("⏳ Создаю сертификат, подождите...")
     try:
         img_buf, pdf_buf = generate_certificate(data["number"], data["company"], data["inn"], valid_until)
-
         await message.answer_photo(
             BufferedInputFile(img_buf.getvalue(), filename="certificate.jpg"), 
             caption=f"✅ Сертификат {data['number']} готов!\nГлавное меню — /start"
         )
         await message.answer_document(BufferedInputFile(pdf_buf.getvalue(), filename=f"Сертификат_{data['number'].replace('/', '_')}.pdf"))
     except Exception as e:
-        await message.answer(f"❌ Ошибка при генерации сертификата: {e}\nПроверьте, загружен ли шаблон cert_template.jpg.")
+        await message.answer(f"❌ Ошибка: {e}")
 
 # ==========================================
 # ВЕТКА: ДОВЕРЕННОСТЬ
@@ -120,22 +115,21 @@ async def process_dover_num(message: Message, state: FSMContext):
         k_date_issue=date_issue,
         k_date_valid=date_valid
     )
-    await message.answer("Шаг 2: Введите **должность** сотрудника (например: `Экспедитор`):")
+    await message.answer("Шаг 2: Введите **должность** сотрудника (например: `Водитель`):")
     await state.set_state(DoverForm.position)
 
 @dp.message(DoverForm.position)
 async def process_dover_position(message: Message, state: FSMContext):
     await state.update_data(position=message.text.strip())
-    await message.answer("Шаг 3: Введите **ФИО** сотрудника полностью (например: `Мамыкин Алексей Константинович`):")
+    await message.answer("Шаг 3: Введите **ФИО** сотрудника полностью (например: `Мачнев Алексей Игоревич`):")
     await state.set_state(DoverForm.person_fio)
 
 @dp.message(DoverForm.person_fio)
 async def process_dover_fio(message: Message, state: FSMContext):
     fio = message.text.strip()
-    data = await state.get_data()
     await state.update_data(
         person_fio=fio,
-        k_person=f"{data.get('position', '')} {fio}"
+        k_person=fio  # В корешок пишем только ФИО, чтобы влезло
     )
     await message.answer("Шаг 4: Введите **Серию** паспорта (только цифры):")
     await state.set_state(DoverForm.passport_series)
@@ -149,19 +143,19 @@ async def process_dover_pass_series(message: Message, state: FSMContext):
 @dp.message(DoverForm.passport_num)
 async def process_dover_pass_num(message: Message, state: FSMContext):
     await state.update_data(passport_num=message.text.strip())
-    await message.answer("Шаг 6: **Кем выдан** паспорт? (например: `ГУ МВД России по Московской области`):")
+    await message.answer("Шаг 6: **Кем выдан** паспорт? (например: `ГУ МВД РОССИИ ПО Г.МОСКВЕ`):")
     await state.set_state(DoverForm.passport_issued)
 
 @dp.message(DoverForm.passport_issued)
 async def process_dover_pass_issued(message: Message, state: FSMContext):
     await state.update_data(passport_issued=message.text.strip())
-    await message.answer("Шаг 7: **Дата выдачи** паспорта (например: `24.02.2021`):")
+    await message.answer("Шаг 7: **Дата выдачи** паспорта (например: `24.02.2024`):")
     await state.set_state(DoverForm.passport_date)
 
 @dp.message(DoverForm.passport_date)
 async def process_dover_pass_date(message: Message, state: FSMContext):
     await state.update_data(passport_date=message.text.strip())
-    await message.answer("Шаг 8: Введите **название поставщика** (например: `ООО \"СТАИРС ПРОФИ\"`):")
+    await message.answer("Шаг 8: Введите **название поставщика** (например: `ООО ОТГРУЗКА`):")
     await state.set_state(DoverForm.supplier)
 
 @dp.message(DoverForm.supplier)
@@ -171,7 +165,7 @@ async def process_dover_supplier(message: Message, state: FSMContext):
         supplier=supplier,
         k_supplier=supplier
     )
-    await message.answer("Шаг 9: Введите **Основание / счет** (например: `счету №1397 от 01.10.2026`):")
+    await message.answer("Шаг 9: Введите **Основание / счет** (например: `счету №777 от 12.12.2025`):")
     await state.set_state(DoverForm.invoice)
 
 @dp.message(DoverForm.invoice)
@@ -186,8 +180,8 @@ async def process_dover_invoice(message: Message, state: FSMContext):
         "Пишите каждый товар с новой строки через знак `|`.\n\n"
         "Формат: *Название | Ед.изм | Кол-во*\n\n"
         "Пример:\n"
-        "Лестница односекционная 08 | Шт | 100\n"
-        "Заглушка пластиковая 54 | Шт | 400"
+        "Лестница 4односекционная 08 | Шт | 100\n"
+        "Заглушка 4пластиковая 54 | Шт | 400"
     )
     await state.set_state(DoverForm.items)
 
@@ -209,7 +203,7 @@ async def process_dover_items(message: Message, state: FSMContext):
         elif len(parts) == 2:
             items.append({"name": parts[0], "unit": "Шт", "qty": parts[1]})
             
-    await message.answer("⏳ Генерирую доверенность, накладываю текст и печати...")
+    await message.answer("⏳ Генерирую доверенность, зачищаю старые поля и накладываю новые...")
     
     try:
         pdf_buf = generate_doverennost(data, items)
