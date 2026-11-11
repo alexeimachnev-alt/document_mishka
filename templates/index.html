@@ -1,1 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Документы МИШКА</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --text-color: #111827;
+            --input-bg: #ffffff;
+            --btn-color: #3b82f6;
+            --hint-color: #9ca3af;
+        }
+        body {
+            background-color: var(--tg-theme-bg-color, var(--bg-color));
+            color: var(--tg-theme-text-color, var(--text-color));
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .tg-input {
+            background-color: var(--tg-theme-secondary-bg-color, var(--input-bg));
+            color: var(--tg-theme-text-color, var(--text-color));
+            border: 1px solid var(--tg-theme-hint-color, #e5e7eb);
+            transition: border-color 0.2s;
+        }
+        .tg-input:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color, var(--btn-color));
+        }
+        .tg-input::placeholder {
+            color: var(--tg-theme-hint-color, var(--hint-color));
+        }
+        .tab-btn {
+            color: var(--tg-theme-hint-color, var(--hint-color));
+            border-bottom: 2px solid transparent;
+        }
+        .tab-active {
+            color: var(--tg-theme-button-color, var(--btn-color));
+            border-bottom: 2px solid var(--tg-theme-button-color, var(--btn-color));
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="p-4 pb-24">
+    <div class="max-w-lg mx-auto">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-center gap-3 mb-6 mt-2">
+            <div class="text-4xl">🐻</div>
+            <h1 class="text-xl font-bold">Документы МИШКА</h1>
+        </div>
 
+        <!-- Tabs -->
+        <div class="flex mb-6 border-b border-gray-200">
+            <button id="tab-cert" class="flex-1 py-3 text-center tab-btn tab-active text-sm" onclick="switchTab('cert')">Сертификат</button>
+            <button id="tab-dover" class="flex-1 py-3 text-center tab-btn text-sm" onclick="switchTab('dover')">Доверенность</button>
+            <button id="tab-contract" class="flex-1 py-3 text-center tab-btn text-sm" onclick="switchTab('contract')">Договор</button>
+        </div>
+
+        <!-- СЕРТИФИКАТ -->
+        <form id="form-cert" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Номер сертификата</label>
+                <input type="text" id="c_num" placeholder="Напр: 2708/25" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Название юрлица</label>
+                <input type="text" id="c_comp" placeholder="ООО &quot;Мосводопром&quot;" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">ИНН</label>
+                <input type="number" id="c_inn" placeholder="7721023832" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Срок действия</label>
+                <input type="text" id="c_date" placeholder="27.08.2026" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+        </form>
+
+        <!-- ДОВЕРЕННОСТЬ -->
+        <form id="form-dover" class="space-y-4 hidden">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium mb-1 opacity-70">№ Доверенности</label>
+                    <input type="number" id="d_num" placeholder="15" class="tg-input w-full p-3 rounded-xl text-base">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1 opacity-70">Должность</label>
+                    <input type="text" id="d_pos" placeholder="Водитель" class="tg-input w-full p-3 rounded-xl text-base">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">ФИО сотрудника полностью</label>
+                <input type="text" id="d_fio" placeholder="Мачнев Алексей Игоревич" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium mb-1 opacity-70">Серия паспорта</label>
+                    <input type="number" id="d_pser" placeholder="4621" class="tg-input w-full p-3 rounded-xl text-base">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1 opacity-70">Номер паспорта</label>
+                    <input type="number" id="d_pnum" placeholder="22318" class="tg-input w-full p-3 rounded-xl text-base">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Кем выдан</label>
+                <input type="text" id="d_piss" placeholder="ГУ МВД РОССИИ ПО Г.МОСКВЕ" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Дата выдачи паспорта</label>
+                <input type="text" id="d_pdat" placeholder="24.02.2024" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Поставщик</label>
+                <input type="text" id="d_sup" placeholder="ООО ОТГРУЗКА" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Основание / Счет</label>
+                <input type="text" id="d_inv" placeholder="счету №777 от 12.12.2025" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Список ТМЦ (до 3 шт)</label>
+                <textarea id="d_items" rows="3" placeholder="Лестница 08 | Шт | 100&#10;Заглушка 54 | Шт | 400" class="tg-input w-full p-3 rounded-xl text-base"></textarea>
+                <p class="text-xs mt-1 opacity-50">Формат: Название | Ед.изм | Кол-во (каждый товар с новой строки)</p>
+            </div>
+        </form>
+
+        <!-- ДОГОВОР -->
+        <form id="form-contract" class="space-y-4 hidden">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium mb-1 opacity-70">Номер договора</label>
+                    <input type="number" id="ct_num" placeholder="777" class="tg-input w-full p-3 rounded-xl text-base">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1 opacity-70">Телефон</label>
+                    <input type="text" id="ct_phone" placeholder="+79060400043" class="tg-input w-full p-3 rounded-xl text-base">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Юрлицо Дилера</label>
+                <input type="text" id="ct_comp" placeholder="ООО МАЧНЕВ И КОШКИ" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">В лице директора (Р.П.)</label>
+                <input type="text" id="ct_fio_g" placeholder="Мачнева А.И." class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">ФИО для подписи (И.П.)</label>
+                <input type="text" id="ct_fio_s" placeholder="Мачнев А.И." class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Юридический адрес</label>
+                <input type="text" id="ct_addr" placeholder="111531, г. Москва, ул. Энтузиастов, д. 100" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">ИНН / КПП</label>
+                <input type="text" id="ct_inn" placeholder="4953077739 / 4953088974" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Расчетный счет</label>
+                <input type="number" id="ct_acc" placeholder="40040040040040040044" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1 opacity-70">Название Банка</label>
+                <input type="text" id="ct_bank" placeholder="ПАО Альфа-банк" class="tg-input w-full p-3 rounded-xl text-base">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium mb-1 opacity-70">Корр. счет</label>
+                    <input type="number" id="ct_corr" placeholder="500500..." class="tg-input w-full p-3 rounded-xl text-base">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1 opacity-70">БИК</label>
+                    <input type="number" id="ct_bik" placeholder="01020304" class="tg-input w-full p-3 rounded-xl text-base">
+                </div>
+            </div>
+        </form>
+
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        let currentTab = 'cert';
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('form-cert').classList.add('hidden');
+            document.getElementById('form-dover').classList.add('hidden');
+            document.getElementById('form-contract').classList.add('hidden');
+            
+            document.getElementById('tab-cert').classList.remove('tab-active');
+            document.getElementById('tab-dover').classList.remove('tab-active');
+            document.getElementById('tab-contract').classList.remove('tab-active');
+            
+            document.getElementById('form-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('tab-active');
+            
+            checkForm();
+        }
+        
+        // Показываем/Скрываем главную кнопку Telegram
+        tg.MainButton.text = "СОЗДАТЬ ДОКУМЕНТ";
+        tg.MainButton.color = tg.themeParams.button_color || "#3b82f6";
+        tg.MainButton.textColor = tg.themeParams.button_text_color || "#ffffff";
+        tg.MainButton.show();
+
+        function checkForm() {
+            // Можно добавить валидацию, но пока просто оставляем кнопку всегда активной
+            tg.MainButton.enable();
+        }
+        
+        tg.onEvent('mainButtonClicked', function() {
+            let data = { doc_type: currentTab, form: {} };
+            
+            if (currentTab === 'cert') {
+                data.form = {
+                    number: document.getElementById('c_num').value,
+                    company: document.getElementById('c_comp').value,
+                    inn: document.getElementById('c_inn').value,
+                    date: document.getElementById('c_date').value
+                };
+            } else if (currentTab === 'dover') {
+                data.form = {
+                    number: document.getElementById('d_num').value,
+                    position: document.getElementById('d_pos').value,
+                    person_fio: document.getElementById('d_fio').value,
+                    passport_series: document.getElementById('d_pser').value,
+                    passport_num: document.getElementById('d_pnum').value,
+                    passport_issued: document.getElementById('d_piss').value,
+                    passport_date: document.getElementById('d_pdat').value,
+                    supplier: document.getElementById('d_sup').value,
+                    invoice: document.getElementById('d_inv').value,
+                    items_text: document.getElementById('d_items').value
+                };
+            } else if (currentTab === 'contract') {
+                data.form = {
+                    num_only: document.getElementById('ct_num').value,
+                    company: document.getElementById('ct_comp').value,
+                    fio_gen_dir: document.getElementById('ct_fio_g').value,
+                    fio_short: document.getElementById('ct_fio_s').value,
+                    address: document.getElementById('ct_addr').value,
+                    inn_kpp: document.getElementById('ct_inn').value,
+                    bank_account: document.getElementById('ct_acc').value,
+                    bank_name: document.getElementById('ct_bank').value,
+                    corr_account: document.getElementById('ct_corr').value,
+                    bik: document.getElementById('ct_bik').value,
+                    phone: document.getElementById('ct_phone').value
+                };
+            }
+            
+            data.chat_id = tg.initDataUnsafe?.user?.id;
+            
+            if(!data.chat_id) {
+                // Если открыли не в телеграме (для тестов)
+                data.chat_id = "test_user";
+            }
+            
+            tg.MainButton.showProgress();
+            
+            // Отправляем данные на наш же сервер
+            fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                tg.MainButton.hideProgress();
+                if(result.error) {
+                    tg.showAlert("Ошибка: " + result.error);
+                } else {
+                    tg.close();
+                }
+            })
+            .catch(err => {
+                tg.MainButton.hideProgress();
+                tg.showAlert("Ошибка соединения с сервером.");
+            });
+        });
+    </script>
+</body>
+</html>
