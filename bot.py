@@ -202,7 +202,7 @@ async def process_dover_items(message: Message, state: FSMContext):
         elif len(parts) == 2:
             items.append({"name": parts[0], "unit": "Шт", "qty": parts[1]})
             
-    await message.answer("⏳ Генерирую доверенность, зачищаю старые поля и накладываю новые...")
+    await message.answer("⏳ Генерирую доверенность, накладываю новые поля...")
     
     try:
         pdf_buf = generate_doverennost(data, items)
