@@ -141,7 +141,7 @@ async def process_dover_pass_series(message: Message, state: FSMContext):
 
 @dp.message(DoverForm.passport_num)
 async def process_dover_pass_num(message: Message, state: FSMContext):
-    await state.update_data(passport_num=f"№ {message.text.strip()}")
+    await state.update_data(passport_num=message.text.strip())
     await message.answer("Шаг 6: **Кем выдан** паспорт? (например: `ГУ МВД РОССИИ ПО Г.МОСКВЕ`):")
     await state.set_state(DoverForm.passport_issued)
 
@@ -154,7 +154,7 @@ async def process_dover_pass_issued(message: Message, state: FSMContext):
 @dp.message(DoverForm.passport_date)
 async def process_dover_pass_date(message: Message, state: FSMContext):
     await state.update_data(passport_date=message.text.strip())
-    await message.answer("Шаг 8: Введите **название поставщика** (например: `ООО \"СТАИРС ПРОФИ\"`):")
+    await message.answer("Шаг 8: Введите **название поставщика** (например: `ООО ОТГРУЗКА`):")
     await state.set_state(DoverForm.supplier)
 
 @dp.message(DoverForm.supplier)
